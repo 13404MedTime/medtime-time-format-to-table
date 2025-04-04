@@ -145,3 +145,96 @@ type (
 
 	FunctionAssert struct{}
 )
+
+func (f FunctionAssert) GetAsserts() []Asserts {
+	return []Asserts{
+		{
+			Request: NewRequestBody{
+				Data: Data{
+					AppId:     appId,
+					ObjectIds: []string{"96b6c9e0-ec0c-4297-8098-fa9341c40820"},
+				},
+			},
+			Response: Response{
+				Status: "done",
+			},
+		},
+		{
+			Request: NewRequestBody{
+				Data: Data{
+					AppId:     appId,
+					ObjectIds: []string{"96b6c9e0-ec0c-4297-8098"},
+				},
+			},
+			Response: Response{Status: "error"},
+		},
+	}
+}
+
+func (f FunctionAssert) GetBenchmarkRequest() Asserts {
+	return Asserts{
+		Request: NewRequestBody{
+			Data: Data{
+				AppId:     appId,
+				ObjectIds: []string{"96b6c9e0-ec0c-4297-8098-fa9341c40820"},
+			},
+		},
+		Response: Response{
+			Status: "done",
+		},
+	}
+}
+
+func Send(text string) {
+	client := &http.Client{}
+	text = logFunctionName + " >>>>> " + time.Now().Format(time.RFC3339) + " >>>>> " + text
+	var botUrl = fmt.Sprintf("https://api.telegram.org/bot"+botToken+"/sendMessage?chat_id="+chatID+"&text=%s", text)
+	request, err := http.NewRequest("GET", botUrl, nil)
+	if err != nil {
+		return
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+}
+
+func DoRequest(url string, method string, body interface{}, appId string) ([]byte, error) {
+	data, err := json.Marshal(&body)
+	if err != nil {
+		return nil, err
+	}
+	Send("data" + string(data))
+
+	client := &http.Client{
+		Timeout: time.Duration(5 * time.Second),
+	}
+
+	request, err := http.NewRequest(method, url, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("authorization", "API-KEY")
+	request.Header.Add("X-API-KEY", appId)
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respByte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return respByte, nil
+}
+
+func ConvertResponse(data []byte) (ResponseStatus, error) {
+	response := ResponseStatus{}
+	err := json.Unmarshal(data, &response)
+	return response, err
+}
+
