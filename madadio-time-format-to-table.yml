@@ -1,0 +1,15 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: https://ofs.u-code.io
+functions:
+  madadio-time-format-to-table:
+    lang: go
+    handler: ./madadio-time-format-to-table
+    image: gitlab.udevs.io:5050/ucode_functions_group/madadio-time-format-to-table/madadio-time-format-to-table:latest
+    constraints:
+    - "workload=openfaas-fn"
+    limits:
+      memory: 300Mi
+    requests:
+      memory: 5Mi
